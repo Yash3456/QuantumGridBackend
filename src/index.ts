@@ -15,7 +15,7 @@ import { handleValidationErrors as errorHandler } from "./middleware/validation"
 
 // Import services
 import { EnergyListingController as TradingScheduler } from "./Services/TradingAlgorithm";
-import { initKafka } from "./kafka/kafkaclient";
+// import { initKafka } from "./kafka/kafkaclient";
 
 // import { NotificationService } from "./services/NotificationService";
 
@@ -109,7 +109,7 @@ class App {
     try {
       // Connect to database
       await connectDB();
-      await initKafka();
+      // await initKafka();
       logger.info("📊 Database connected successfully");
 
       // Start server
@@ -127,6 +127,6 @@ class App {
 }
 
 // Start the application
-const app = new App();
-app.start();
-export default app;
+const appInstance = new App();
+appInstance.start();
+export default appInstance["app"];
