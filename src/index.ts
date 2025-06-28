@@ -71,12 +71,9 @@ class App {
 
     this.app.use("/api/", limit);
 
-<<<<<<< HEAD
 app.listen(5000, '0.0.0.0', () => {
   console.log("Server running on port 5000");
 });
-
-=======
     this.app.use(
       morgan("combined", {
         stream: {
@@ -145,4 +142,3 @@ const app = new App();
 app.start();
 
 export default app;
->>>>>>> eb6ba851f866fc9e3937ebfc133190fda59c9017
