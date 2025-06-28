@@ -11,23 +11,74 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { email } = req.body;
+    const { firstName, lastName, email, Mobile, userType } = req.body;
 
-    // Validate input
-    if (!email) {
+    if (!firstName || !lastName || !email || !Mobile || !userType) {
       res.status(400).json({
         success: false,
-        error: "Missing required fields: email or password",
+        error:
+          "Missing required fields: firstName, lastName, Mobile, userType, or email",
       });
       return;
     }
 
-    await SendOtp(req, res);
+    // Insert into User table
+    const { data: userData, error: userError } = await supabase
+      .from("User")
+      .insert([
+        {
+          email,
+          userType,
+          status: "pending",
+          walletAddress: "",
+          kycStatus: false,
+          createdat: Date.now(),
+          updatedat: Date.now(),
+        },
+      ])
+      .select()
+      .single(); // So we can get the inserted ID
 
-    res.status(200).json({ success: true, message: "OTP Send successful" });
+    if (userError || !userData) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to create User",
+      });
+      return;
+    }
 
-    // Fetch user from Supabase
+    // Insert into UserProfile table
+    const { data: profileData, error: profileError } = await supabase
+      .from("UserProfile")
+      .insert([
+        {
+          user_id: userData.id, // assuming you have a foreign key
+          firstName,
+          lastName,
+          profilePictureUrl: "",
+        },
+      ])
+      .select()
+      .single();
+
+    if (profileError) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to create UserProfile",
+      });
+      return;
+    }
+
+    res.status(201).json({
+      success: true,
+      message: "User created successfully",
+      user: {
+        ...userData,
+        profile: profileData,
+      },
+    });
   } catch (error) {
+    console.error("Unexpected error:", error);
     res.status(500).json({
       success: false,
       error: "An unexpected error occurred",
