@@ -45,17 +45,13 @@ export const uploadImagesAndSaveUrls = async (
     // Upload to Supabase
     const frontUpload = await supabase.storage
       .from(process.env.SUPABASE_STORAGE_BUCKET!)
-      .upload(frontPath, frontFile.buffer, {
-        contentType: frontFile.mimetype,
-        upsert: true,
-      });
+      .upload(frontPath, files.frontImage[0].buffer);
 
     const backUpload = await supabase.storage
       .from(process.env.SUPABASE_STORAGE_BUCKET!)
-      .upload(backPath, backFile.buffer, {
-        contentType: backFile.mimetype,
-        upsert: true,
-      });
+      .upload(backPath, files.backImage[0].buffer);
+
+    console.log("Front Upload:", frontUpload.error, backUpload.error);
 
     if (frontUpload.error || backUpload.error) {
       res.status(500).json({
@@ -68,32 +64,43 @@ export const uploadImagesAndSaveUrls = async (
       return;
     }
 
+    console.log("Front Upload3:");
+
     // Generate public URLs
-    const frontUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/${process.env.SUPABASE_STORAGE_BUCKET}/${frontPath}`;
-    const backUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/${process.env.SUPABASE_STORAGE_BUCKET}/${backPath}`;
+    // const frontUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/${process.env.SUPABASE_STORAGE_BUCKET}/${frontPath}`;
+    // const backUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/${process.env.SUPABASE_STORAGE_BUCKET}/${backPath}`;
+
+    const frontUrl = await supabase.storage
+      .from(process.env.SUPABASE_STORAGE_BUCKET!)
+      .getPublicUrl(frontPath);
+    const backUrl = await supabase.storage
+      .from(process.env.SUPABASE_STORAGE_BUCKET!)
+      .getPublicUrl(backPath);
+
+    console.log("Front Upload2:");
 
     // ✅ Insert URLs into your Supabase DB table
-    const { error: dbError } = await supabase.from("user_documents").insert([
-      {
-        username: username,
-        front_url: frontUrl,
-        back_url: backUrl,
-      },
-    ]);
+    // const { error: dbError } = await supabase.from("").insert([
+    //   {
+    //     username: username,
+    //     front_url: frontUrl,
+    //     back_url: backUrl,
+    //   },
+    // ]);
 
-    if (dbError) {
-      res.status(500).json({
-        success: false,
-        error: dbError.message,
-      });
-      return;
-    }
+    // if (dbError) {
+    //   res.status(500).json({
+    //     success: false,
+    //     error: dbError.message,
+    //   });
+    //   return;
+    // }
 
     res.status(200).json({
       success: true,
       message: "Images uploaded and saved successfully",
-      frontImageUrl: frontUrl,
-      backImageUrl: backUrl,
+      frontImageUrl: frontUrl.data.publicUrl,
+      backImageUrl: backUrl.data.publicUrl,
     });
   } catch (err) {
     console.error("Error uploading images:", err);

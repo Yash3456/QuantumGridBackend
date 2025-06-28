@@ -1,7 +1,5 @@
 // src/routes/seedEnergySources.ts
 
-import express, { Request, Response } from "express";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
 import { EnergySource } from "../Models/EnergyListing"; // adjust this path if needed
 import { v4 as uuidv4 } from "uuid";

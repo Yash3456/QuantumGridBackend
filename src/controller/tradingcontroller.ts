@@ -160,7 +160,7 @@ export class TradingHistory {
   // Get all trade details made by the user
   async getUserTrades(req: Request, res: Response): Promise<void> {
     try {
-      const { user_id } = req.params;
+      const { user_id } = req.params || req.body;
 
       // Validate input
       if (!user_id) {

@@ -10,7 +10,7 @@ export interface IEnergySource extends Document {
   capacity_kw: number;
   efficiency_rating: number;
   energy_price: number;
-  status: string;
+  status: String;
   meter_id?: string;
   blockchain_hash: string;
   state: string;
@@ -48,11 +48,11 @@ const EnergySourceSchema = new Schema<IEnergySource>({
     type: {
       type: String,
       enum: ["Point"],
-      required: true,
+      required: false,
     },
     coordinates: {
       type: [Number],
-      required: true,
+      required: false,
     },
   },
 });
