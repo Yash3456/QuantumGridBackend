@@ -15,42 +15,57 @@ export const createUser = async (
   try {
     const { firstName, lastName, email, Mobile, userType } = req.body;
 
-    // Validate input
     if (!firstName || !lastName || !email || !Mobile || !userType) {
       res.status(400).json({
         success: false,
-        error:
-          "Missing required fields: firstName, lastName, Mobile, userTpye or email",
+        error: "Missing required fields: firstName, lastName, Mobile, userType, or email",
       });
       return;
     }
 
-    // Insert user data into Supabase
-    const { data, error: Error } = await supabase
-      .from("User") // Replace "UserProfile" with your actual table name
+    // Insert into User table
+    const { data: userData, error: userError } = await supabase
+      .from("User")
       .insert([
         {
           email,
           userType,
-          status: pending,
+          status: "pending",
           walletAddress: "",
           kycStatus: false,
           createdat: Date.now(),
           updatedat: Date.now(),
         },
-      ]);
+      ])
+      .select()
+      .single(); // So we can get the inserted ID
 
-      const { result, error} = await supabase.from("UserProfile").insert([
-        data.id,
-        firstName,
-        lastName,
-        profilePictureUrl:"",
-      ]),
-
-    if (error) {
+    if (userError || !userData) {
       res.status(500).json({
         success: false,
-        error: "Failed to create user",
+        error: "Failed to create User",
+      });
+      return;
+    }
+
+    // Insert into UserProfile table
+    const { data: profileData, error: profileError } = await supabase
+      .from("UserProfile")
+      .insert([
+        {
+          user_id: userData.id, // assuming you have a foreign key
+          firstName,
+          lastName,
+          profilePictureUrl: "",
+        },
+      ])
+      .select()
+      .single();
+
+    if (profileError) {
+      res.status(500).json({
+        success: false,
+        error: "Failed to create UserProfile",
       });
       return;
     }
@@ -58,9 +73,13 @@ export const createUser = async (
     res.status(201).json({
       success: true,
       message: "User created successfully",
-      user: result,
+      user: {
+        ...userData,
+        profile: profileData,
+      },
     });
   } catch (error) {
+    console.error("Unexpected error:", error);
     res.status(500).json({
       success: false,
       error: "An unexpected error occurred",
