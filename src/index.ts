@@ -6,25 +6,17 @@ import morgan from "morgan";
 import { connectDB } from "./config/db";
 import MainRoutes from "./Routes/main";
 import rateLimit from "express-rate-limit";
-import compression from "compression";
 
-import { connectDatabase } from "./config/prismaconnect";
 import { environment } from "./config/environment";
 import logger from "./utils/logger";
 
 // Import middleware
-import { errorHandler } from "./middleware/errorHandler";
-import { authMiddleware } from "./middleware/auth";
-
-// Import routes
-import authRoutes from "./routes/auth";
-import userRoutes from "./routes/users";
-import energyRoutes from "./routes/energy";
-import tradingRoutes from "./routes/trading";
+import { handleValidationErrors as errorHandler } from "./middleware/validation";
 
 // Import services
-import { TradingScheduler } from "./services/TradingAlgorithm";
-import { NotificationService } from "./services/NotificationService";
+import { EnergyListingController as TradingScheduler } from "./Services/TradingAlgorithm";
+
+// import { NotificationService } from "./services/NotificationService";
 
 dotenv.config();
 
@@ -38,7 +30,7 @@ class App {
 
     this.initializeMiddleware();
     this.initializeRoutes();
-    this.initializeErrorHadling();
+    this.initializeErrorHandling();
   }
 
   private initializeMiddleware(): void {
@@ -79,8 +71,6 @@ class App {
 
     this.app.use("/api/", limit);
 
-    this.app.use(compression());
-
     this.app.use(
       morgan("combined", {
         stream: {
@@ -105,58 +95,29 @@ class App {
 
   private initializeRoutes(): void {
     // API routes
-    this.app.use("/api/auth", authRoutes);
-    this.app.use("/api/users", authMiddleware, userRoutes);
-    this.app.use("/api/energy", energyRoutes);
-    this.app.use("/api/trading", tradingRoutes);
-
-    // API documentation
-    this.app.get("/api", (req: Request, res: Response) => {
-      res.json({
-        message: "QuantumGrid Energy Trading API",
-        version: "1.0.0",
-        documentation: "/api/docs",
-        endpoints: {
-          auth: "/api/auth",
-          users: "/api/users",
-          energy: "/api/energy",
-          trading: "/api/trading",
-        },
-      });
-    });
-
-    // 404 handler
-    this.app.use("*", (req: Request, res: Response) => {
-      res.status(404).json({
-        success: false,
-        error: "Route not found",
-        path: req.originalUrl,
-        method: req.method,
-      });
-    });
+    this.app.use("/api", MainRoutes);
   }
 
   private initializeErrorHandling(): void {
     this.app.use(errorHandler);
   }
 
-  private initializeServices(): void {
-    // Start trading algorithm in production
-    if (environment.NODE_ENV === "production") {
-      this.tradingschedular.startContinuousTrading();
-      logger.info("🤖 Trading algorithm started");
-    }
+  // private initializeServices(): void {
+  //   // Start trading algorithm in production
+  //   if (environment.NODE_ENV === "production") {
+  //     this.tradingschedular.startContinuousTrading();
+  //     logger.info("🤖 Trading algorithm started");
+  //   }
 
-    // Initialize notification service
-    NotificationService.initialize();
-    logger.info("📬 Notification service initialized");
-  }
+  //   // Initialize notification service
+  //   NotificationService.initialize();
+  //   logger.info("📬 Notification service initialized");
+  // }
 
   public async start(): Promise<void> {
     try {
       // Connect to database
       await connectDB();
-      await connectDatabase();
       logger.info("📊 Database connected successfully");
 
       // Start server

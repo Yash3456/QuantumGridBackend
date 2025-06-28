@@ -6,7 +6,6 @@ import {
   TradingHistory,
   Tradingstatusupdation,
 } from "../controller/tradingcontroller";
-import { authorize } from "../middleware/auth";
 import {
   getUserEnergyListings,
   TradeCompletionController,
@@ -61,7 +60,6 @@ router.post(
   body("state").isString().withMessage("state is required"),
   body("source_location").isString().withMessage("source_location is required"),
   handleValidationErrors,
-  authorize("SELLER", "PROSUMER"),
   energylisting.createEnergyListing
 );
 
@@ -89,7 +87,6 @@ router.post(
     .optional()
     .isIn(["SOLAR", "WIND", "HYDRO", "ANY"]),
   handleValidationErrors,
-  authorize("BUYER", "PROSUMER"),
   tradingcontroller.createPurchaseRequest
 );
 
