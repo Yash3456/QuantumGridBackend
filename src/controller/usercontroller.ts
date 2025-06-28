@@ -44,9 +44,8 @@ export const createUser = async (
         data.id,
         firstName,
         lastName,
-        profilePictureUrl:""
-        
-      ])
+        profilePictureUrl:"",
+      ]),
 
     if (error) {
       res.status(500).json({
