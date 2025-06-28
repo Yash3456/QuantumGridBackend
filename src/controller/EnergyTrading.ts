@@ -197,7 +197,7 @@ export class TradingController {
 
       // Select the best match (e.g., lowest price per kWh)
       const bestMatch = matchingListings.sort(
-        (a, b) => a.energy_price - b.energy_price
+        (a, b) => Number(a.energy_price) - Number(b.energy_price)
       )[0];
 
       // Create a transaction
@@ -221,7 +221,9 @@ export class TradingController {
       if (quantity_kwh === bestMatch.capacity_kw) {
         await EnergySource.findByIdAndDelete(bestMatch._id);
       } else {
-        bestMatch.capacity_kw -= quantity_kwh;
+        bestMatch.capacity_kw = (
+          Number(bestMatch.capacity_kw) - quantity_kwh
+        ).toString();
         await bestMatch.save();
       }
 

@@ -5,12 +5,16 @@ import mongoose from "mongoose";
 import OTPRoutes from "./Authentication";
 import { upload, uploadImagesAndSaveUrls } from "../Services/DocumentService";
 import TradingRoutes from "./Trading";
-import { createDummySources } from "../DummyData/dummydata";
+import { createDummySources, Updatingtoken } from "../DummyData/dummydata";
 import { EnergySource } from "../Models/EnergyListing";
 import { Transaction } from "../Models/Transaction";
 import { createDummyTransactions } from "../DummyData/DummyTransactions";
 import AnalyticsRoutes from "./Analytics";
 import { insertDummyPriceLimits } from "../DummyData/DummyPricing";
+import {
+  fetchAllEnergyListings,
+  fetchEnergyListingById,
+} from "../DummyData/MongoData";
 
 // Main router
 const router = express.Router();
@@ -29,6 +33,10 @@ router.post(
   uploadImagesAndSaveUrls
 );
 router.use("/trading", TradingRoutes);
+
+router.get("/metadata", fetchAllEnergyListings);
+router.get("/metadata/:id", fetchEnergyListingById);
+router.put("/metadata/update-token", Updatingtoken);
 
 router.use("/analytics", AnalyticsRoutes);
 

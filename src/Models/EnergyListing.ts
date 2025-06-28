@@ -7,9 +7,9 @@ export interface IEnergySource extends Document {
   source_id: string;
   user_id: string;
   source_type: "solar" | "wind" | "hydro";
-  capacity_kw: number;
+  capacity_kw: string;
   efficiency_rating: number;
-  energy_price: number;
+  energy_price: string;
   status: String;
   meter_id?: string;
   blockchain_hash: string;
@@ -29,7 +29,7 @@ const EnergySourceSchema = new Schema<IEnergySource>({
     enum: ["solar", "wind", "hydro"],
     required: true,
   },
-  capacity_kw: { type: Number, required: true },
+  capacity_kw: { type: String, required: true },
   efficiency_rating: { type: Number },
   status: { type: String, required: true },
   meter_id: { type: String },
@@ -41,7 +41,7 @@ const EnergySourceSchema = new Schema<IEnergySource>({
   },
   state: { type: String, required: true }, // <- NEW field for state
   energy_price: {
-    type: Number,
+    type: String,
     required: true,
   },
   source_location: {
@@ -71,8 +71,8 @@ EnergySourceSchema.pre("save", async function (next) {
     const { minimum_price_per_kwh, maximum_price_per_kwh } = limit;
 
     if (
-      source.energy_price < minimum_price_per_kwh ||
-      source.energy_price > maximum_price_per_kwh
+      parseFloat(source.energy_price) < minimum_price_per_kwh ||
+      parseFloat(source.energy_price) > maximum_price_per_kwh
     ) {
       return next(
         new Error(
