@@ -457,7 +457,11 @@ export const VerifyOtp = async (req: Request, res: Response) => {
     console.log("✅ OTP verification successful!");
     console.log("📤 Response:", JSON.stringify(response, null, 2));
 
-    return res.status(200).json(response);
+    return res.status(200).json({
+      success: true,
+      message: "successfully verified",
+      response: response,
+    });
   } catch (error: any) {
     console.error("\n❌ === VERIFY OTP ERROR ===");
     console.error("Error:", error.message);
@@ -545,8 +549,8 @@ export const TestEmailConnection = async (req: Request, res: Response) => {
         provider: process.env.MAIL_USER?.includes("gmail")
           ? "Gmail"
           : process.env.MAIL_USER?.includes("outlook")
-          ? "Outlook"
-          : "Other",
+            ? "Outlook"
+            : "Other",
         messageId: testEmailResult.messageId,
         testEmailSentTo: testEmail,
         timestamp: new Date().toISOString(),

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { createClient } from "@supabase/supabase-js";
 import dotenv from "dotenv";
+import { SendOtp, VerifyOtp } from "./OTPVerification";
 
 dotenv.config();
 
@@ -8,63 +9,77 @@ const supabaseUrl = process.env.SUPABASE_URL!;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-export const createUser = async (
-  req: Request,
-  res: Response
-): Promise<void> => {
+export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { firstName, lastName, email, Mobile, userType } = req.body;
+    const { email } = req.body;
 
     // Validate input
-    if (!firstName || !lastName || !email || !Mobile || !userType) {
+    if (!email) {
       res.status(400).json({
         success: false,
-        error:
-          "Missing required fields: firstName, lastName, Mobile, userTpye or email",
+        error: "Missing required fields: email or password",
       });
       return;
     }
 
-    // Insert user data into Supabase
-    const { data, error: Error } = await supabase
-      .from("User") // Replace "UserProfile" with your actual table name
-      .insert([
-        {
-          email,
-          userType,
-          status: pending,
-          walletAddress: "",
-          kycStatus: false,
-          createdat: Date.now(),
-          updatedat: Date.now(),
-        },
-      ]);
+    await SendOtp(req, res);
 
-      const { result, error} = await supabase.from("UserProfile").insert([
-        data.id,
-        firstName,
-        lastName,
-        profilePictureUrl:""
-        
-      ])
+    res.status(200).json({ success: true, message: "OTP Send successful" });
 
-    if (error) {
-      res.status(500).json({
-        success: false,
-        error: "Failed to create user",
-      });
-      return;
-    }
-
-    res.status(201).json({
-      success: true,
-      message: "User created successfully",
-      user: result,
-    });
+    // Fetch user from Supabase
   } catch (error) {
     res.status(500).json({
       success: false,
       error: "An unexpected error occurred",
+    });
+  }
+};
+
+export const GetUserDetail = async (req: Request, res: Response) => {
+  try {
+    const { email, otp } = req.body;
+
+    const isvalidotp = await VerifyOtp(req, res);
+    console.log("❌ Supasbase hit");
+    const { data, error } = await supabase
+      .from("UserProfile") // Replace "UserProfile" with your actual table name
+      .select("*")
+      .eq("email", email)
+      .single();
+    console.log("❌ Supasbase retirved data", data);
+    if (error || !data) {
+      res.status(401).json({
+        success: false,
+        error: "Invalid email or password",
+      });
+      return;
+    }
+    console.log("❌ Supasbase retirved data validation checked");
+    // Verify password (assuming passwords are stored securely, e.g., hashed)
+
+    if (!isvalidotp) {
+      res.status(401).json({
+        success: false,
+        error: "Invalid email or password",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      user: {
+        id: data.id,
+        email: data.email,
+        firstName: data.firstName,
+        lastName: data.lastName,
+      },
+    });
+    return;
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "An unexpected error occurred while fetching user details",
     });
   }
 };

@@ -15,6 +15,7 @@ import { handleValidationErrors as errorHandler } from "./middleware/validation"
 
 // Import services
 import { EnergyListingController as TradingScheduler } from "./Services/TradingAlgorithm";
+import { initKafka } from "./kafka/kafkaclient";
 
 // import { NotificationService } from "./services/NotificationService";
 
@@ -49,10 +50,8 @@ class App {
 
     this.app.use(
       cors({
-        origin: environment?.CORS_ORIGIN
-          ? environment.CORS_ORIGIN.split(",")
-          : ["http://localhost:5000"],
-        credentials: true,
+        origin: "*",
+        credentials: false,
         methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
         allowedHeaders: ["content-type", "Authorization", "X-Requested-With"],
       })
@@ -70,14 +69,6 @@ class App {
     });
 
     this.app.use("/api/", limit);
-
-    this.app.use(
-      morgan("combined", {
-        stream: {
-          write: (message: string) => logger.info(message.trim()),
-        },
-      })
-    );
 
     this.app.use(express.json({ limit: "10mb" }));
     this.app.use(express.urlencoded({ extended: true, limit: "10mb" }));
@@ -118,6 +109,7 @@ class App {
     try {
       // Connect to database
       await connectDB();
+      await initKafka();
       logger.info("📊 Database connected successfully");
 
       // Start server
@@ -137,5 +129,4 @@ class App {
 // Start the application
 const app = new App();
 app.start();
-
 export default app;

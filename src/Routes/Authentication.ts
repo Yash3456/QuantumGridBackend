@@ -6,6 +6,7 @@ import {
   TestEmailConnection,
   VerifyOtp,
 } from "../controller/OTPVerification";
+import { GetUserDetail, loginUser } from "../controller/usercontroller";
 // import { uploadDocument } from "../controller/DocumentUploadation";
 
 dotenv.config();
@@ -51,6 +52,30 @@ router.get("/test-email", async (req: Request, res: Response) => {
 router.get("/status", async (req: Request, res: Response) => {
   try {
     await GetOtpStatus(req, res);
+  } catch (error) {
+    console.error("Error in status route:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+router.use("/login", async (req: Request, res: Response) => {
+  try {
+    await loginUser(req, res);
+  } catch (error) {
+    console.error("Error in status route:", error);
+    res.status(500).json({
+      success: false,
+      error: "Internal server error",
+    });
+  }
+});
+
+router.use("/verify-login", async (req: Request, res: Response) => {
+  try {
+    await GetUserDetail(req, res);
   } catch (error) {
     console.error("Error in status route:", error);
     res.status(500).json({
