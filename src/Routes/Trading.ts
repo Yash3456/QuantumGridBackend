@@ -105,7 +105,7 @@ router.post(
 );
 
 // Get user trades
-router.post(
+router.get(
   "/trades",
   query("status")
     .optional()
