@@ -65,7 +65,7 @@ router.post(
 );
 
 // Get user's offers
-router.get("/offers", getUserEnergyListings);
+router.get("/useroffers", getUserEnergyListings);
 
 // Get All Existing offers
 router.get("/alloffers", getAllEnergyListings);

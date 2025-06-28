@@ -10,6 +10,7 @@ import { EnergySource } from "../Models/EnergyListing";
 import { Transaction } from "../Models/Transaction";
 import { createDummyTransactions } from "../DummyData/DummyTransactions";
 import AnalyticsRoutes from "./Analytics";
+import { insertDummyPriceLimits } from "../DummyData/DummyPricing";
 
 // Main router
 const router = express.Router();
@@ -72,6 +73,16 @@ router.get("/dummytrans", async (req: Request, res: Response) => {
       success: false,
       error: "Failed to seed transactions.",
     });
+  }
+});
+
+router.get("/dummypricing", async (req, res) => {
+  try {
+    await insertDummyPriceLimits();
+    res.status(200).json({ success: true, message: "Dummy data inserted" });
+  } catch (err) {
+    console.error("Error populating dummy data:", err);
+    res.status(500).json({ success: false, message: "Failed to insert data" });
   }
 });
 
