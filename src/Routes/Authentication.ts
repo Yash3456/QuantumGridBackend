@@ -6,6 +6,7 @@ import {
   TestEmailConnection,
   VerifyOtp,
 } from "../controller/OTPVerification";
+// import { uploadDocument } from "../controller/DocumentUploadation";
 
 dotenv.config();
 
