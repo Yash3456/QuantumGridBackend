@@ -44,6 +44,7 @@ app.use(((
   res.status(500).json({ message: "Something broke!", error: err.message });
 }) as express.ErrorRequestHandler);
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
+app.listen(5000, '0.0.0.0', () => {
+  console.log("Server running on port 5000");
 });
+
