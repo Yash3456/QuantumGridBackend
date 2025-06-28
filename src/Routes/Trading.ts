@@ -12,6 +12,7 @@ import {
   TradingController,
 } from "../controller/EnergyTrading";
 import { EnergyListingController } from "../Services/TradingAlgorithm";
+import { getAllEnergyListings } from "../controller/EnergyTrading";
 
 const router = express.Router();
 
@@ -65,6 +66,9 @@ router.post(
 
 // Get user's offers
 router.get("/offers", getUserEnergyListings);
+
+// Get All Existing offers
+router.get("/alloffers", getAllEnergyListings);
 
 // Update offer
 router.put(

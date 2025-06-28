@@ -41,6 +41,34 @@ export const getUserEnergyListings = async (
   }
 };
 
+export const getAllEnergyListings = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    // Fetch energy listings for the user
+    const energyListings = await EnergySource.find({});
+
+    if (!energyListings || energyListings.length === 0) {
+      res.status(404).json({
+        success: false,
+        error: "No energy listings found for the user",
+      });
+      return Promise.resolve();
+    }
+
+    res.status(200).json({
+      success: true,
+      energyListings,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: "Failed to fetch energy listings",
+    });
+  }
+};
+
 export class TradeCompletionController {
   // Complete trade and store transaction
   async completeTrade(req: Request, res: Response): Promise<void> {

@@ -5,92 +5,101 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const supabaseUrl = process.env.SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Multer config for memory storage
+// ✅ Export multer instance
 const storage = multer.memoryStorage();
 export const upload = multer({ storage });
 
-export const uploadMultipleDocuments = async (
+const supabase = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
+
+export const uploadImagesAndSaveUrls = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const files = req.files as Express.Multer.File[];
+    const files = req.files as {
+      frontImage?: Express.Multer.File[];
+      backImage?: Express.Multer.File[];
+    };
+
     const username = req.body.username;
 
-    if (!files || files.length === 0 || !username) {
+    if (!files.frontImage || !files.backImage || !username) {
       res.status(400).json({
         success: false,
-        error: "Missing files or username",
+        error: "Both images and username are required",
       });
       return;
     }
 
-    // ✅ Step 1: Split username into firstName and lastName
-    const [firstName, lastName] = username.trim().split(" ");
+    const frontFile = files.frontImage[0];
+    const backFile = files.backImage[0];
 
-    if (!firstName || !lastName) {
-      res.status(400).json({
+    // Construct upload paths
+    const timestamp = Date.now();
+    const frontPath = `${username}/${timestamp}-front-${frontFile.originalname}`;
+    const backPath = `${username}/${timestamp}-back-${backFile.originalname}`;
+
+    // Upload to Supabase
+    const frontUpload = await supabase.storage
+      .from(process.env.SUPABASE_STORAGE_BUCKET!)
+      .upload(frontPath, frontFile.buffer, {
+        contentType: frontFile.mimetype,
+        upsert: true,
+      });
+
+    const backUpload = await supabase.storage
+      .from(process.env.SUPABASE_STORAGE_BUCKET!)
+      .upload(backPath, backFile.buffer, {
+        contentType: backFile.mimetype,
+        upsert: true,
+      });
+
+    if (frontUpload.error || backUpload.error) {
+      res.status(500).json({
         success: false,
-        error: "Please provide both first and last name in username",
+        error:
+          frontUpload.error?.message ||
+          backUpload.error?.message ||
+          "Upload failed",
       });
       return;
     }
 
-    // ✅ Step 2: Query Supabase to get userId using both names
-    const { data, error } = await supabase
-      .from("user_profile") // Replace with your actual profile table
-      .select("userId") // Replace with actual field name if different
-      .eq("firstName", firstName)
-      .eq("lastName", lastName)
-      .single();
+    // Generate public URLs
+    const frontUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/${process.env.SUPABASE_STORAGE_BUCKET}/${frontPath}`;
+    const backUrl = `${process.env.SUPABASE_URL}/storage/v1/object/public/${process.env.SUPABASE_STORAGE_BUCKET}/${backPath}`;
 
-    if (error || !data) {
-      res.status(404).json({
+    // ✅ Insert URLs into your Supabase DB table
+    const { error: dbError } = await supabase.from("user_documents").insert([
+      {
+        username: username,
+        front_url: frontUrl,
+        back_url: backUrl,
+      },
+    ]);
+
+    if (dbError) {
+      res.status(500).json({
         success: false,
-        error: "User not found",
+        error: dbError.message,
       });
       return;
-    }
-
-    const userId = data.userId;
-    const uploadedFiles: { name: string; url: string }[] = [];
-
-    for (const file of files) {
-      const path = `${userId}/${Date.now()}-${file.originalname}`;
-
-      const { error: uploadError } = await supabase.storage
-        .from(process.env.SUPABASE_STORAGE_BUCKET!)
-        .upload(path, file.buffer, {
-          contentType: file.mimetype,
-          upsert: true,
-        });
-
-      if (uploadError) {
-        console.error(
-          "Upload failed for",
-          file.originalname,
-          uploadError.message
-        );
-        continue;
-      }
-
-      const publicUrl = `${supabaseUrl}/storage/v1/object/public/${process.env.SUPABASE_STORAGE_BUCKET}/${path}`;
-      uploadedFiles.push({ name: file.originalname, url: publicUrl });
     }
 
     res.status(200).json({
       success: true,
-      files: uploadedFiles,
+      message: "Images uploaded and saved successfully",
+      frontImageUrl: frontUrl,
+      backImageUrl: backUrl,
     });
-  } catch (error) {
-    console.error("Unexpected error:", error);
+  } catch (err) {
+    console.error("Error uploading images:", err);
     res.status(500).json({
       success: false,
-      error: "An error occurred while uploading documents",
+      error: "Internal server error",
     });
   }
 };
