@@ -40,19 +40,13 @@ router.get(
 // Create energy offer
 router.post(
   "/offers",
-  body("energy_listing_id").optional().isUUID(),
+  body("energy_listing_id").optional(),
   body("source_id").isUUID().withMessage("Valid source_id is required"),
   body("user_id").isUUID().withMessage("Valid user_id is required"),
   body("source_type").isString().withMessage("source_type must be a string"),
-  body("capacity_kw")
-    .isFloat({ min: 0.1 })
-    .withMessage("capacity_kw must be a number > 0"),
   body("efficiency_rating")
     .isFloat({ min: 0 })
     .withMessage("efficiency_rating must be a number >= 0"),
-  body("energy_price")
-    .isFloat({ min: 0.01 })
-    .withMessage("energy_price must be >= 0.01"),
   body("status")
     .isIn(["available", "sold", "pending"])
     .withMessage("status must be one of: available, sold, pending"),
